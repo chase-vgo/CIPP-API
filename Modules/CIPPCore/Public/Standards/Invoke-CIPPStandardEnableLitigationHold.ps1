@@ -5,10 +5,7 @@ function Invoke-CIPPStandardEnableLitigationHold {
     #>
     param($Tenant, $Settings)
 
-    $MailboxesNoLitHold = {
-        New-ExoRequest -tenantid $Tenant -cmdlet 'Get-Mailbox' -cmdparams @{ MailboxPlan = 'ExchangeOnlineEnterprise'; Filter = 'LitigationHoldEnabled -eq $False'}
-        Write-Host "Getting mailboxes without litigation hold"
-    }
+    $MailboxesNoLitHold = New-ExoRequest -tenantid $Tenant -cmdlet 'Get-Mailbox' -cmdparams @{ MailboxPlan = 'ExchangeOnlineEnterprise'; Filter = 'LitigationHoldEnabled -eq False'}
 
     If ($Settings.remediate -eq $true) {
 
