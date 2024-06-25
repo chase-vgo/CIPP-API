@@ -7,7 +7,7 @@ function Invoke-CIPPStandardEnableLitigationHold {
 
     Write-LogMessage -API 'Standards' -tenant $Tenant -message 'Starting litigation hold standard run' -sev Info
     
-    $MailboxesNoLitHold = New-ExoRequest -tenantid $Tenant -cmdlet 'Get-Mailbox' -cmdparams @{ MailboxPlan = 'ExchangeOnlineEnterprise'; Filter = 'LitigationHoldEnabled -eq $False'}
+    $MailboxesNoLitHold = New-ExoRequest -tenantid $Tenant -cmdlet 'Get-Mailbox' -cmdparams @{ MailboxPlan = 'ExchangeOnlineEnterprise'; Filter = 'LitigationHoldEnabled -eq "False"'}
 
     Write-LogMessage -API 'Standards' -tenant $Tenant -message "There is $($MailboxesNoLitHold.count) mailboxes without Litigation hold." -sev Info
     
