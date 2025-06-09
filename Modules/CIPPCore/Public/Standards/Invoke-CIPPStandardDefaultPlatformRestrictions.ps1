@@ -34,7 +34,7 @@ function Invoke-CIPPStandardDefaultPlatformRestrictions {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/intune-standards#low-impact
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards
     #>
 
     param($Tenant, $Settings)
@@ -57,6 +57,19 @@ function Invoke-CIPPStandardDefaultPlatformRestrictions {
         ($CurrentState.macOSRestriction.personalDeviceEnrollmentBlocked -eq $Settings.personalMacOSBlocked) -and
         ($CurrentState.windowsRestriction.platformBlocked -eq $Settings.platformWindowsBlocked) -and
         ($CurrentState.windowsRestriction.personalDeviceEnrollmentBlocked -eq $Settings.personalWindowsBlocked)
+
+    $CompareField = [PSCustomObject]@{
+        platformAndroidForWorkBlocked   = $CurrentState.androidForWorkRestriction.platformBlocked
+        personalAndroidForWorkBlocked   = $CurrentState.androidForWorkRestriction.personalDeviceEnrollmentBlocked
+        platformAndroidBlocked          = $CurrentState.androidRestriction.platformBlocked
+        personalAndroidBlocked          = $CurrentState.androidRestriction.personalDeviceEnrollmentBlocked
+        platformiOSBlocked              = $CurrentState.iosRestriction.platformBlocked
+        personaliOSBlocked              = $CurrentState.iosRestriction.personalDeviceEnrollmentBlocked
+        platformMacOSBlocked            = $CurrentState.macOSRestriction.platformBlocked
+        personalMacOSBlocked            = $CurrentState.macOSRestriction.personalDeviceEnrollmentBlocked
+        platformWindowsBlocked          = $CurrentState.windowsRestriction.platformBlocked
+        personalWindowsBlocked          = $CurrentState.windowsRestriction.personalDeviceEnrollmentBlocked
+    }
 
     If ($Settings.remediate -eq $true) {
         if ($StateIsCorrect -eq $true) {
@@ -109,29 +122,17 @@ function Invoke-CIPPStandardDefaultPlatformRestrictions {
     }
 
     If ($Settings.alert -eq $true) {
-
         if ($StateIsCorrect -eq $true) {
             Write-LogMessage -API 'Standards' -Tenant $Tenant -Message 'DefaultPlatformRestrictions is correctly set.' -Sev Info
         } else {
-            Write-StandardsAlert -message 'DefaultPlatformRestrictions is incorrectly set.' -object $StateIsCorrect -tenant $Tenant -standardName 'DefaultPlatformRestrictions' -standardId $Settings.standardId
+            Write-StandardsAlert -message 'DefaultPlatformRestrictions is incorrectly set.' -object $CompareField -tenant $Tenant -standardName 'DefaultPlatformRestrictions' -standardId $Settings.standardId
             Write-LogMessage -API 'Standards' -Tenant $Tenant -Message 'DefaultPlatformRestrictions is incorrectly set.' -Sev Info
         }
     }
 
     If ($Settings.report -eq $true) {
-        $Table = [PSCustomObject]@{
-            platformAndroidForWorkBlocked   = $CurrentState.androidForWorkRestriction.platformBlocked
-            personalAndroidForWorkBlocked   = $CurrentState.androidForWorkRestriction.personalDeviceEnrollmentBlocked
-            platformAndroidBlocked          = $CurrentState.androidRestriction.platformBlocked
-            personalAndroidBlocked          = $CurrentState.androidRestriction.personalDeviceEnrollmentBlocked
-            platformiOSBlocked              = $CurrentState.iosRestriction.platformBlocked
-            personaliOSBlocked              = $CurrentState.iosRestriction.personalDeviceEnrollmentBlocked
-            platformMacOSBlocked            = $CurrentState.macOSRestriction.platformBlocked
-            personalMacOSBlocked            = $CurrentState.macOSRestriction.personalDeviceEnrollmentBlocked
-            platformWindowsBlocked          = $CurrentState.windowsRestriction.platformBlocked
-            personalWindowsBlocked          = $CurrentState.windowsRestriction.personalDeviceEnrollmentBlocked
-        }
-        Set-CIPPStandardsCompareField -FieldName 'standards.DefaultPlatformRestrictions' -FieldValue $Table -TenantFilter $Tenant
+        $FieldValue = $StateIsCorrect ? $true : $CompareField
+        Set-CIPPStandardsCompareField -FieldName 'standards.DefaultPlatformRestrictions' -FieldValue $FieldValue -TenantFilter $Tenant
         Add-CIPPBPAField -FieldName 'DefaultPlatformRestrictions' -FieldValue [bool]$StateIsCorrect -StoreAs bool -Tenant $Tenant
     }
 }

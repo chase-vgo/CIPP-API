@@ -7,8 +7,8 @@ function Invoke-CIPPStandardStaleEntraDevices {
     .SYNOPSIS
         (Label) Cleanup stale Entra devices
     .DESCRIPTION
-        (Helptext) Cleans up Entra devices that have not connected/signed in for the specified number of days.
-        (DocsDescription) Cleans up Entra devices that have not connected/signed in for the specified number of days. First disables and later deletes the devices. More info can be found in the [Microsoft documentation](https://learn.microsoft.com/en-us/entra/identity/devices/manage-stale-devices)
+        (Helptext) Remediate is currently not available. Cleans up Entra devices that have not connected/signed in for the specified number of days.
+        (DocsDescription) Remediate is currently not available. Cleans up Entra devices that have not connected/signed in for the specified number of days. First disables and later deletes the devices. More info can be found in the [Microsoft documentation](https://learn.microsoft.com/en-us/entra/identity/devices/manage-stale-devices)
     .NOTES
         CAT
             Entra (AAD) Standards
@@ -28,7 +28,7 @@ function Invoke-CIPPStandardStaleEntraDevices {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/entra-aad-standards#high-impact
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards
     #>
 
     param($Tenant, $Settings)

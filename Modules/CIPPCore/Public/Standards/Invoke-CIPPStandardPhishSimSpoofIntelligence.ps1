@@ -14,6 +14,7 @@ function Invoke-CIPPStandardPhishSimSpoofIntelligence {
             Defender Standards
         TAG
         ADDEDCOMPONENT
+            {"type":"switch","label":"Remove extra domains from the allow list","name":"standards.PhishSimSpoofIntelligence.RemoveExtraDomains","defaultValue":false,"required":false}
             {"type":"autoComplete","multiple":true,"creatable":true,"required":false,"label":"Allowed Domains","name":"standards.PhishSimSpoofIntelligence.AllowedDomains"}
         IMPACT
             Medium Impact
@@ -25,7 +26,7 @@ function Invoke-CIPPStandardPhishSimSpoofIntelligence {
         UPDATECOMMENTBLOCK
             Run the Tools\Update-StandardsComments.ps1 script to update this comment block
     .LINK
-        https://docs.cipp.app/user-documentation/tenant/standards/list-standards/defender-standards#medium-impact
+        https://docs.cipp.app/user-documentation/tenant/standards/list-standards
     #>
 
     param($Tenant, $Settings)
@@ -35,10 +36,19 @@ function Invoke-CIPPStandardPhishSimSpoofIntelligence {
 
     [String[]]$AddDomain = $Settings.AllowedDomains.value | Where-Object { $_ -notin $DomainState.SendingInfrastructure }
 
-    $RemoveDomain = $DomainState | Where-Object { $_.SendingInfrastructure -notin $Settings.AllowedDomains.value } |
-    Select-Object -Property Identity,SendingInfrastructure
+    if ($Settings.RemoveExtraDomains -eq $true) {
+        $RemoveDomain = $DomainState | Where-Object { $_.SendingInfrastructure -notin $Settings.AllowedDomains.value } |
+            Select-Object -Property Identity,SendingInfrastructure
+    } else {
+        $RemoveDomain = @()
+    }
 
     $StateIsCorrect = ($AddDomain.Count -eq 0 -and $RemoveDomain.Count -eq 0)
+
+    $CompareField = [PSCustomObject]@{
+        "Missing Domains"   = $AddDomain -join ', '
+        "Incorrect Domains" = $RemoveDomain.SendingInfrastructure -join ', '
+    }
 
     If ($Settings.remediate -eq $true) {
         If ($StateIsCorrect -eq $true) {
@@ -46,15 +56,17 @@ function Invoke-CIPPStandardPhishSimSpoofIntelligence {
         } Else {
             $BulkRequests = New-Object System.Collections.Generic.List[Hashtable]
 
-            # Prepare removal requests
-            If ($RemoveDomain.Count -gt 0) {
-                Write-Host "Removing $($RemoveDomain.Count) domains from Spoof Intelligence"
-                $BulkRequests.Add(@{
-                    CmdletInput = @{
-                        CmdletName = 'Remove-TenantAllowBlockListSpoofItems'
-                        Parameters = @{ Identity = 'default'; Ids = $RemoveDomain.Identity }
-                    }
-                })
+            if ($Settings.RemoveExtraDomains -eq $true) {
+                # Prepare removal requests
+                If ($RemoveDomain.Count -gt 0) {
+                    Write-Host "Removing $($RemoveDomain.Count) domains from Spoof Intelligence"
+                    $BulkRequests.Add(@{
+                            CmdletInput = @{
+                                CmdletName = 'Remove-TenantAllowBlockListSpoofItems'
+                                Parameters = @{ Identity = 'default'; Ids = $RemoveDomain.Identity }
+                            }
+                        })
+                }
             }
 
             # Prepare addition requests
@@ -89,15 +101,14 @@ function Invoke-CIPPStandardPhishSimSpoofIntelligence {
         If ($StateIsCorrect -eq $true) {
             Write-LogMessage -API 'Standards' -Tenant $Tenant -message 'Spoof Intelligence Allow list is correctly configured' -sev Info
         } Else {
-            Write-StandardsAlert -message 'Spoof Intelligence Allow list is not correctly configured' -object $CurrentState -tenant $Tenant -standardName 'PhishSimSpoofIntelligence' -standardId $Settings.standardId
+            Write-StandardsAlert -message 'Spoof Intelligence Allow list is not correctly configured' -object $CompareField -tenant $Tenant -standardName 'PhishSimSpoofIntelligence' -standardId $Settings.standardId
             Write-LogMessage -API 'Standards' -Tenant $Tenant -message 'Spoof Intelligence Allow list is not correctly configured' -sev Info
         }
     }
 
     If ($Settings.report -eq $true) {
-        $CurrentState = $StateIsCorrect ? $true : $DomainState.SendingInfrastructure
-
-        Set-CIPPStandardsCompareField -FieldName 'standards.PhishSimSpoofIntelligence' -FieldValue $CurrentState -Tenant $Tenant
+        $FieldValue = $StateIsCorrect ? $true : $CompareField
+        Set-CIPPStandardsCompareField -FieldName 'standards.PhishSimSpoofIntelligence' -FieldValue $FieldValue -Tenant $Tenant
         Add-CIPPBPAField -FieldName 'PhishSimSpoofIntelligence' -FieldValue [bool]$StateIsCorrect -StoreAs bool -Tenant $Tenant
     }
 }
