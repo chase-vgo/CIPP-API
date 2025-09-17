@@ -32,7 +32,7 @@ function Invoke-CIPPOffboardingJob {
         }
         { $_.ResetPass -eq $true } {
             try {
-                Set-CIPPResetPassword -tenantFilter $TenantFilter -DisplayName -UserID $username -Headers $Headers -APIName $APIName
+                Set-CIPPResetPassword -tenantFilter $TenantFilter -DisplayName $DisplayName -UserID $username -Headers $Headers -APIName $APIName
             } catch {
                 $_.Exception.Message
             }
@@ -107,6 +107,13 @@ function Invoke-CIPPOffboardingJob {
         { $_.disableForwarding } {
             try {
                 Set-CIPPForwarding -userid $userid -username $username -tenantFilter $TenantFilter -Disable $true -Headers $Headers -APIName $APIName
+            } catch {
+                $_.Exception.Message
+            }
+        }
+        { $_.RemoveTeamsPhoneDID } {
+            try {
+                Remove-CIPPUserTeamsPhoneDIDs -userid $userid -username $username -tenantFilter $TenantFilter -Headers $Headers -APIName $APIName
             } catch {
                 $_.Exception.Message
             }
